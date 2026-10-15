@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { InterzoneBackground } from './InterzoneBackground.jsx';
 import { isElectronEnvironment } from '../utils/exportPipeline';
-import { DESKTOP_EXE_DOWNLOAD_URL } from '../constants/urls';
+import { DESKTOP_EXE_DOWNLOAD_URL, BUY_ME_A_COFFEE_URL } from '../constants/urls';
 
 const TIMELINE_MIN_H = 100;
 const TIMELINE_MAX_H = 600;
@@ -298,7 +298,7 @@ export function InterzoneFrame({ children, timeline, transportBar, isPlaying, tr
               textTransform: 'uppercase',
               fontWeight: 700,
             }}>
-              STRANGELET · KINETO-CUT
+              STRANGELET · KINETICUT
             </div>
           </div>
 
@@ -693,6 +693,74 @@ export function InterzoneFrame({ children, timeline, transportBar, isPlaying, tr
           textTransform: 'uppercase',
         }}>
           {isPlaying ? '▶' : '⏸'} NOW PLAYING: {trackTitle}
+        </div>
+      )}
+
+      {/* ── BUY ME A COFFEE (Clean footer link) ── */}
+      {!cinemaMode && (
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          marginTop: 2,
+          marginBottom: 6,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          flexShrink: 0,
+        }}>
+          <a
+            href={BUY_ME_A_COFFEE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Support Strangelet Kineto-Cut on Buy Me a Coffee"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '3px 10px',
+              backgroundColor: 'rgba(255, 221, 0, 0.08)',
+              border: '1px solid rgba(255, 221, 0, 0.35)',
+              borderRadius: 16,
+              color: '#FFDD00',
+              fontFamily: "'Syncopate', var(--font-mono, monospace)",
+              fontSize: 8.5,
+              fontWeight: 700,
+              letterSpacing: '0.8px',
+              textDecoration: 'none',
+              textTransform: 'uppercase',
+              transition: 'all 0.2s ease',
+              backdropFilter: 'blur(4px)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 221, 0, 0.22)';
+              e.currentTarget.style.borderColor = 'rgba(255, 221, 0, 0.7)';
+              e.currentTarget.style.boxShadow = '0 0 10px rgba(255, 221, 0, 0.35)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 221, 0, 0.08)';
+              e.currentTarget.style.borderColor = 'rgba(255, 221, 0, 0.35)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FFDD00"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ display: 'block' }}
+            >
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+              <line x1="6" y1="1" x2="6" y2="4" />
+              <line x1="10" y1="1" x2="10" y2="4" />
+              <line x1="14" y1="1" x2="14" y2="4" />
+            </svg>
+            <span>Buy Me a Coffee</span>
+          </a>
         </div>
       )}
     </div>

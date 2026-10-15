@@ -244,6 +244,7 @@ export function CanvasWorkspace({
   alienBeam = false,
   warpDrive = false,
   lyricAnim = 'pulse_slam',
+  fxEnvelopeDepth = 1.0,
 }) {
 
 
@@ -308,7 +309,7 @@ export function CanvasWorkspace({
   const { filterString: envelopeFilter } = useCssEnvelope({
     audioSignals,
     isPlaying,
-    envelopeDepth: 1.0,
+    envelopeDepth: fxEnvelopeDepth,
     targetRef: containerRef,
   });
 
@@ -599,20 +600,25 @@ export function CanvasWorkspace({
         return { transform: `translateX(${panX.toFixed(2)}%) scale(${zoom.toFixed(3)})` };
       }
 
-      // ── MONTAGE: Eisenstein collision — hold snap for 130ms so it's actually visible ──
+      // ── MONTAGE: Eisenstein collision — hold snap for 130ms with beat bounce ──
       case 'montage': {
         const now = isOfflineRendering ? (currentTime * 1000) : Date.now();
+        const beatFrac = (currentTime * (bpm / 60)) % 1;
+        const beatBounce = Math.exp(-beatFrac * 6) * 0.08 * bass;
         if (!audioSignals?.isTransient) {
           // Return held snap if within hold window
           if (now < montageSnapRef.current.until) {
             return { transform: montageSnapRef.current.transform, transition: 'none' };
           }
-          return {};
+          return {
+            transform: `scale(${(1.0 + beatBounce).toFixed(4)})`,
+            transition: 'transform 0.08s ease-out',
+          };
         }
         const dir = Math.random() > 0.5 ? 1 : -1;
         const jX  = dir * (18 + Math.random() * 28);
         const jY  = (Math.random() - 0.5) * 22;
-        const sc  = 1.07 + Math.random() * 0.14;
+        const sc  = 1.08 + Math.random() * 0.14 + bass * 0.12;
         const snap = `translate(${jX.toFixed(1)}px, ${jY.toFixed(1)}px) scale(${sc.toFixed(3)})`;
         montageSnapRef.current = { transform: snap, until: now + 130 };
         return { transform: snap, transition: 'none' };
@@ -1045,8 +1051,16 @@ export function CanvasWorkspace({
         };
       }
 
-      default:
-        return {};
+      default: {
+        const beatFrac = (currentTime * (bpm / 60)) % 1;
+        const pulse = Math.exp(-beatFrac * 5) * 0.05 * bass;
+        const bright = 1.0 + rms * 0.15 + (audioSignals?.isTransient ? 0.18 : 0);
+        return {
+          transform: `scale(${(1.0 + pulse).toFixed(4)})`,
+          filter: `brightness(${bright.toFixed(3)})`,
+          transition: audioSignals?.isTransient ? 'none' : 'transform 0.1s ease-out, filter 0.15s ease-out',
+        };
+      }
     }
   };
 
@@ -1069,52 +1083,89 @@ export function CanvasWorkspace({
     const isTransient = Boolean(audioSignals?.isTransient);
     if (isTransient && !previousTransientRef.current) {
       // ── Per-style minimum hold between slide advances ──
-      // Chill styles use a long hold so slides linger instead of flicking rapidly.
-      const CHILL_STYLES = new Set(['ambient_drift', 'lo_fi_flicker', 'slow_dissolve', 'dreamscape', 'deren_meshes', 'marker_jetee', 'warhol_screen', 'debord_detourne', 'lynch_redroom', 'lynch_eraserhead', 'mv_long_cut', 'mv_slow_burn', 'mv_flash_cut', 'mv_cinematic_glide', 'mv_hypnotic_drift', 'dmt_breakthrough', 'lsd_acid_melt', 'psilocybin_breath', 'ayahuasca_vision']);
+      // High-energy styles chop fast on beat transients.
+      // Chill and long-cut styles linger to let clips breathe.
+      const CHILL_STYLES = new Set([
+        'ambient_drift', 'lo_fi_flicker', 'slow_dissolve', 'dreamscape',
+        'deren_meshes', 'marker_jetee', 'warhol_screen', 'debord_detourne',
+        'lynch_redroom', 'lynch_eraserhead', 'mv_long_cut', 'mv_slow_burn',
+        'mv_cinematic_glide', 'mv_hypnotic_drift'
+      ]);
+
+      const beatMs = Math.round(60000 / (bpm || 120));
       const CHILL_MIN_HOLD_MS = {
-        ambient_drift: 8000,   // new slide every ~8s minimum — very languid
-        lo_fi_flicker: 2500,   // every ~2.5s — lo-fi groove, mid-tempo rhythm
-        slow_dissolve: 2500,   // every ~2.5s — cinematic but not glacial
-        dreamscape:    7000,   // every ~7s — dreamy drift, very slow
-        deren_meshes:   6000,
-        marker_jetee:   8000,
-        warhol_screen:  12000,
-        debord_detourne: 3000,
-        lynch_redroom:   7000,  // agonizing holds — the Red Room operates on dream time
-        lynch_eraserhead: 4000, // industrial holds — slightly more frequent than redroom
-        mv_long_cut:   5000,   // 5 second minimum hold between cuts
-        mv_slow_burn:  10000,  // 10 second minimum hold
-        mv_flash_cut:  2000,   // 2 second minimum hold (2–4 beat feel)
-        mv_cinematic_glide: 6000, // 6 second hold
-        mv_hypnotic_drift:  8000, // 8 second hold
-        dmt_breakthrough: 2200,   // rapid psychedelic geometry cut
-        lsd_acid_melt:    4500,   // melting flow
-        psilocybin_breath: 7000,  // deep organic wall breathing hold
-        ayahuasca_vision: 6000,   // visionary shamanic hold
+        // High-energy / Kinetic styles (fast beat chop)
+        montage:          Math.max(260, Math.round(beatMs * 0.75)), // ~375ms at 120bpm — kinetic Eisenstein cuts on downbeats
+        apple_kinetic:    Math.max(300, Math.round(beatMs)),        // ~500ms — 1 beat pop
+        third_mind:       Math.max(240, Math.round(beatMs * 0.6)),  // ~300ms — rapid Burroughs splicing
+        strobe:           Math.max(200, Math.round(beatMs * 0.5)),  // ~250ms — strobe-cut
+        brakhage_emulsion:Math.max(200, Math.round(beatMs * 0.5)),  // ~250ms — celluloid flash
+        jitter:           Math.max(200, Math.round(beatMs * 0.5)),  // ~250ms
+        venetian:         Math.max(350, Math.round(beatMs)),
+        seance_dissolve:  Math.max(400, Math.round(beatMs)),
+        magnetic_tape:    Math.max(300, Math.round(beatMs * 0.75)),
+        liquid_gate:      Math.max(400, Math.round(beatMs)),
+        dmt_breakthrough: Math.max(300, Math.round(beatMs * 0.75)), // rapid sacred geometry shift
+        anger_scorpio:    Math.max(300, Math.round(beatMs * 0.75)),
+        jarman_super8:    Math.max(280, Math.round(beatMs * 0.75)),
+        schneemann_fuses: Math.max(280, Math.round(beatMs * 0.75)),
+        smith_flaming:    Math.max(450, Math.round(beatMs)),
+        mekas_diary:      Math.max(350, Math.round(beatMs)),
+        mv_flash_cut:     Math.max(700, beatMs * 2),                // 2 beats feel (~1.0s)
+
+        // Mid-tempo / narrative styles
+        fiona_voyeur:     1800,
+        narrative:        2200,
+        ken_burns:        3000,
+        lsd_acid_melt:    3000,
+        psilocybin_breath:4000,
+        ayahuasca_vision: 4000,
+        mv_long_cut:      4500,
+
+        // Chill / ambient styles (lingering duration)
+        slow_dissolve:    2500,
+        lo_fi_flicker:    2500,
+        debord_detourne:  3000,
+        lynch_eraserhead: 3500,
+        deren_meshes:     5000,
+        mv_cinematic_glide: 5000,
+        dreamscape:       6000,
+        marker_jetee:     6000,
+        lynch_redroom:    6000,
+        ambient_drift:    8000,
+        mv_hypnotic_drift:8000,
+        mv_slow_burn:     8000,
+        warhol_screen:    10000,
       };
+
       const currentStyle = (selectedStyle || selectedEra || '').toLowerCase();
-      const minHold = CHILL_MIN_HOLD_MS[currentStyle] ?? 0; // 0 = no throttle for hi-nrg styles
+      // Default fallback hold: snappy ~375ms for kinetic editing
+      const minHold = CHILL_MIN_HOLD_MS[currentStyle] ?? Math.max(320, Math.round(beatMs * 0.75));
       // In offline render mode, use song timeline milliseconds so cuts don't speed up with render loop
       const now = isOfflineRendering ? (currentTime * 1000) : performance.now();
       const sinceLastAdvance = now - lastSlideAdvanceRef.current;
 
+      // ── 1. Advance slide if minHold satisfied ──
       if (sinceLastAdvance >= minHold || sinceLastAdvance < 0) {
         advanceSlide();
         lastSlideAdvanceRef.current = now;
+      }
 
-        // ── Beat flash: skip for chill styles or offline render ──
-        if (!isOfflineRendering && !CHILL_STYLES.has(currentStyle) && beatFlashRef.current) {
-          if (beatFlashRafRef.current) cancelAnimationFrame(beatFlashRafRef.current);
-          beatFlashRef.current.style.opacity = '0.38';
-          const flashStart = performance.now();
-          const decayFlash = () => {
-            const age = performance.now() - flashStart;
-            const opacity = Math.max(0, 0.38 * (1 - age / 140));
-            if (beatFlashRef.current) beatFlashRef.current.style.opacity = String(opacity.toFixed(3));
-            if (age < 140) beatFlashRafRef.current = requestAnimationFrame(decayFlash);
-          };
-          beatFlashRafRef.current = requestAnimationFrame(decayFlash);
-        }
+      // ── 2. Beat flash: strobe punch on EVERY transient kick ──
+      if (!isOfflineRendering && !CHILL_STYLES.has(currentStyle) && beatFlashRef.current) {
+        if (beatFlashRafRef.current) cancelAnimationFrame(beatFlashRafRef.current);
+        beatFlashRef.current.style.opacity = '0.42';
+        const flashStart = performance.now();
+        const decayFlash = () => {
+          const age = performance.now() - flashStart;
+          const opacity = Math.max(0, 0.42 * (1 - age / 150));
+          if (beatFlashRef.current) beatFlashRef.current.style.opacity = String(opacity.toFixed(3));
+          if (age < 150) beatFlashRafRef.current = requestAnimationFrame(decayFlash);
+        };
+        beatFlashRafRef.current = requestAnimationFrame(decayFlash);
+      }
+
+
 
         // ── BURROUGHS CUT-UP: third_mind only ──
         if (currentStyle === 'third_mind') {
@@ -1201,11 +1252,9 @@ export function CanvasWorkspace({
           setSubliminal({ text: phrase, top: `${30 + Math.random() * 40}%`, left: `${5 + Math.random() * 85}%`, visible: true, scale: 0.8 + Math.random() * 0.5, rotation: 0 });
           setTimeout(() => setSubliminal((prev) => ({ ...prev, visible: false })), beatMs);
         }
-        // All other styles: no subliminal text (narrative, montage, strobe, chill, etc.)
       }
-    }
-    previousTransientRef.current = isTransient;
-  }, [audioSignals?.isTransient, assets, selectedStyle, selectedEra, isPlaying, bpm, advanceSlide, currentTime, isOfflineRendering]);
+      previousTransientRef.current = isTransient;
+    }, [audioSignals?.isTransient, assets, selectedStyle, selectedEra, isPlaying, bpm, advanceSlide, currentTime, isOfflineRendering]);
 
   // Halt animation + reset when paused/stopped
   useEffect(() => {
@@ -1235,20 +1284,8 @@ export function CanvasWorkspace({
       'mv_cinematic_glide', 'mv_hypnotic_drift',
       'dmt_breakthrough', 'lsd_acid_melt', 'psilocybin_breath', 'ayahuasca_vision'
     ]);
-    const needsAnimation =
-      isPlaying &&
-      (chaosLevel > 0 ||
-       // Arm RAF for ANY active Rube preset — don't gate on rubeStage (async state lag)
-       selectedRube !== 'none' ||
-       liquidWarpEnabled ||
-       kaleidoscopeMode !== 'none' ||
-       phosphorTrails ||
-       chromaticPunch ||
-       fractalMode !== 'none' ||
-       alienBeam ||
-       warpDrive ||
-       lyricAnim !== 'clean' ||
-       ANIMATED_STYLES.has(selectedStyle));
+    // Run 60fps animation loop for all styles during active playback so audio reactivity is always alive
+    const needsAnimation = isPlaying && !isOfflineRendering;
 
     if (!needsAnimation) {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -1263,7 +1300,7 @@ export function CanvasWorkspace({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [chaosLevel, selectedRube, rubeStage, isPlaying, selectedStyle, liquidWarpEnabled, kaleidoscopeMode, phosphorTrails, chromaticPunch, fractalMode, alienBeam, warpDrive, lyricAnim]);
+  }, [isPlaying, isOfflineRendering]);
 
   // WebGL safety listeners on workspace canvas
   useEffect(() => {
@@ -1574,9 +1611,16 @@ export function CanvasWorkspace({
             playsInline
             muted
             loop
-            autoPlay={isPlaying}
+            autoPlay={isPlaying && !isOfflineRendering}
             style={sharedStyle}
-            onLoadedMetadata={(e) => { if (isPlaying) e.target.play().catch(() => {}); }}
+            onLoadedMetadata={(e) => {
+              if (isPlaying && !isOfflineRendering) {
+                e.target.play().catch(() => {});
+              } else if (isOfflineRendering && e.target.duration) {
+                e.target.pause();
+                e.target.currentTime = currentTime % e.target.duration;
+              }
+            }}
             onError={(e) => {
               console.warn('[CanvasWorkspace] video load error', e);
               if (displayUrl !== SMPTE_FALLBACK_URL) {
@@ -1655,7 +1699,7 @@ export function CanvasWorkspace({
           {/* Red channel — shift left */}
           <video
             src={displayUrl}
-            muted loop autoPlay={isPlaying} playsInline
+            muted loop autoPlay={isPlaying && !isOfflineRendering} playsInline
             style={{
               ...mediaStyle,
               filter: 'saturate(8) hue-rotate(0deg) contrast(1.8) brightness(0.9)',
@@ -1665,7 +1709,7 @@ export function CanvasWorkspace({
           {/* Green channel — center (primary) */}
           <video
             src={displayUrl}
-            muted loop autoPlay={isPlaying} playsInline
+            muted loop autoPlay={isPlaying && !isOfflineRendering} playsInline
             style={{
               ...mediaStyle,
               filter: 'saturate(4) hue-rotate(120deg) contrast(1.4) brightness(0.85)',
@@ -1675,7 +1719,7 @@ export function CanvasWorkspace({
           {/* Blue channel — shift right */}
           <video
             src={displayUrl}
-            muted loop autoPlay={isPlaying} playsInline
+            muted loop autoPlay={isPlaying && !isOfflineRendering} playsInline
             style={{
               ...mediaStyle,
               filter: 'saturate(8) hue-rotate(240deg) contrast(1.8) brightness(0.9)',
@@ -2305,13 +2349,13 @@ export function CanvasWorkspace({
         let animTransition = isTransient ? 'none' : 'transform 0.12s ease-out, filter 0.15s ease-out';
 
         if (lyricAnim === 'pulse_slam') {
-          // Sharp kinetic scale punch on drum kicks & transients with fast decay
-          const slamScale = 1.0 + bassVal * 0.22 + (isTransient ? 0.25 : 0);
-          const slamHop = isTransient ? -6 : 0;
-          animTransform = `${lyricAlign === 'center' ? 'translateX(-50%)' : ''} translateY(${slamHop}px) scale(${slamScale.toFixed(3)})`;
-          animTextShadow = isTransient
-            ? '0 0 28px rgba(255, 107, 0, 1), 0 0 55px rgba(6, 182, 212, 0.95), 0 2px 10px #000'
-            : `0 0 ${(12 + bassVal * 22).toFixed(0)}px rgba(6,182,212,${(0.7 + bassVal * 0.3).toFixed(2)}), 0 2px 8px rgba(0,0,0,0.95)`;
+          // Punchy beat bounce with exponential decay and bass-reactive neon glow
+          const beatPulse = Math.exp(-beatPhase * 5) * (0.08 + bassVal * 0.22);
+          const slamScale = 1.0 + beatPulse + (isTransient ? 0.05 : 0);
+          animTransform = `${lyricAlign === 'center' ? 'translateX(-50%)' : ''} scale(${slamScale.toFixed(3)})`;
+          const glowCyan = (14 + beatPulse * 40 + bassVal * 20).toFixed(0);
+          const glowOrange = (10 + beatPulse * 30 + bassVal * 15).toFixed(0);
+          animTextShadow = `0 0 ${glowCyan}px rgba(6,182,212,0.9), 0 0 ${glowOrange}px rgba(255,107,0,0.6), 0 2px 8px rgba(0,0,0,0.95)`;
         } else if (lyricAnim === 'karaoke_glow') {
           // Glowing neon sweep in sync with the beat phase
           animTransform = `${lyricAlign === 'center' ? 'translateX(-50%)' : ''} scale(${(1.0 + bassVal * 0.08).toFixed(3)})`;

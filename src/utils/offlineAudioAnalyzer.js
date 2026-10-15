@@ -176,8 +176,9 @@ export function extractSignalsAtTime(
     if (fluxHistory.length > 43) fluxHistory.shift(); // ~700ms window at 60fps
     const avgFlux = fluxHistory.reduce((a, b) => a + b, 0) / fluxHistory.length;
     const timeSinceLast = timestampSeconds - lastTransientTime;
-    isTransient = (flux > avgFlux * 1.8 && flux > 0.002 && timeSinceLast > 0.12) ||
-                  (flux > 0.04 && timeSinceLast > 0.12);
+    const threshMultiplier = Math.max(1.15, 2.0 - (s - 1.0) * 0.45);
+    const minFluxThresh = 0.0016 / Math.max(0.4, s);
+    isTransient = (((flux > avgFlux * threshMultiplier && flux > minFluxThresh) || (bass > 0.75 && flux > avgFlux * 1.1) || (flux > 0.035)) && timeSinceLast > 0.11);
   } else {
     isTransient = flux > 0.03 || bass > 0.85;
   }

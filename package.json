@@ -1,7 +1,7 @@
 {
-  "name": "interzone-drive-in",
+  "name": "strangelet-kineto-cut",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Audio-reactive kinetic montage engine and vintage cinema synthesizer",
   "author": "Interzone Drive-In",
@@ -46,6 +46,7 @@
   "build": {
     "appId": "com.strangelet.kinetocut",
     "productName": "Strangelet Kineto-Cut",
+    "executableName": "Strangelet-Kineto-Cut",
     "copyright": "Copyright © 2026 Interzone Drive-In",
     "directories": {
       "output": "release"
@@ -62,6 +63,7 @@
     ],
     "win": {
       "icon": "build/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
       "target": [
         "nsis",
         "portable",
@@ -70,12 +72,17 @@
       "sign": null,
       "signAndEditExecutable": false
     },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "shortcutName": "Strangelet Kineto-Cut",
+      "uninstallDisplayName": "Strangelet Kineto-Cut",
       "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico"
+      "uninstallerIcon": "build/icon.ico",
+      "guid": "d38402c8-89c2-4682-a728-kinetocut2026"
     }
   },
   "allowScripts": {

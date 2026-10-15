@@ -5,7 +5,22 @@ export const WEB_APP_URL = 'https://interzone-drive-in.vercel.app/';
 
 // Windows Desktop Executable (.exe) download link.
 // Can be customized via VITE_DESKTOP_DOWNLOAD_URL in .env, or points to
-// GitHub Releases, a direct download link, or local /downloads/Kinet-O-Chop-Setup.exe.
+// GitHub Releases, a direct download link, or local /downloads/Strangelet-Kineto-Cut-Setup-1.0.0.exe.
 export const DESKTOP_EXE_DOWNLOAD_URL =
   import.meta.env.VITE_DESKTOP_DOWNLOAD_URL ||
-  'https://github.com/strangelet-lounge/kinet-o-chop/releases/latest/download/Kinet-O-Chop-Setup.exe';
+  'https://github.com/lordgriefo/strangelet-kineto-cut/releases/tag/v1.27';
+
+// Creator Support Page (Buy Me a Coffee)
+export const BUY_ME_A_COFFEE_URL = 'https://buymeacoffee.com/magicstatic/';
+
+// Sister Roadside Attractions & Suite Tools
+export const KINETO_CUT_URL = 'https://strangelet-kineto-cut.vercel.app/';
+export const AUDIO_ARC_URL = 'https://audioarc.vercel.app/';
+export const WUNDERBAR_URL = 'https://perchance.org/the-wunderbar';
+export const CINE_SAMPLER_URL = 'https://perchance.org/strangelet-cine-sampler';
+
+// Music & Album Releases
+export const OCCULT_SONGBOOK_URL = 'https://buymeacoffee.com/magicstatic/';
+
+// Google Flow Syncro-Vox Tool (Talking Mouth Shape Generator)
+export const GOOGLE_FLOW_SYNCRO_VOX_URL = 'https://flow.google.com/shared/tool/245908d5-dceb-42ed-884c-9c2f8f21b98a';

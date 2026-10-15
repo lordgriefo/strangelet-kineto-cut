@@ -971,6 +971,7 @@ export default function App() {
               alienBeam={alienBeam}
               warpDrive={warpDrive}
               lyricAnim={lyricAnim}
+              fxEnvelopeDepth={fxEnvelopeDepth}
             />
           </div>
 

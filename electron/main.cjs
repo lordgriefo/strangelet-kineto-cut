@@ -45,6 +45,7 @@ function createWindow() {
   const iconPath = path.join(__dirname, '../build/icon.ico');
 
   mainWindow = new BrowserWindow({
+    title: 'Strangelet KinetiCut',
     width: 1440,
     height: 900,
     minWidth: 1024,
@@ -190,28 +191,24 @@ ipcMain.handle('export:init', async (event, options = {}) => {
   // Locate ffmpeg
   const ffmpegCmd = getFfmpegPath();
 
-  // Input PNG image sequence piped from stdin
+  // Input PNG image sequence piped from stdin (Input 0)
   const ffmpegArgs = [
     '-y',
-    '-framerate', String(fps),
     '-f', 'image2pipe',
+    '-framerate', String(fps),
     '-vcodec', 'png',
     '-i', '-', // Stream from stdin
   ];
 
-  // Configure Audio Stream
+  // Configure Audio Stream (Input 1)
   if (audioInputFile && fs.existsSync(audioInputFile)) {
-    if (isWebM) {
-      // WebM uses Opus audio
-      ffmpegArgs.push('-i', audioInputFile, '-c:a', 'libopus', '-b:a', '192k');
-    } else {
-      // MP4 uses high-bitrate AAC audio
-      ffmpegArgs.push('-i', audioInputFile, '-c:a', 'aac', '-b:a', '320k');
-    }
+    ffmpegArgs.push('-i', audioInputFile);
   }
 
-  // Ensure output dimensions are always even (divisible by 2) to prevent libx264/yuv420p errors
-  ffmpegArgs.push('-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2');
+  // Mathematically force exact Presentation Timestamps (PTS) for each incoming frame N:
+  // PTS = N / (fps * TimeBase), guaranteeing each frame is exactly 1/fps seconds long.
+  // Also pad dimensions to even numbers (divisible by 2) for libx264/yuv420p compatibility.
+  ffmpegArgs.push('-vf', `setpts=N/(${fps}*TB),pad=ceil(iw/2)*2:ceil(ih/2)*2`);
 
   // Stream mapping
   if (audioInputFile && fs.existsSync(audioInputFile)) {
@@ -221,7 +218,7 @@ ipcMain.handle('export:init', async (event, options = {}) => {
   }
 
   // Force constant frame rate sync so every frame maps 1:1 to timeline dt
-  ffmpegArgs.push('-vsync', '1');
+  ffmpegArgs.push('-r', String(fps));
 
   // Configure Video Stream Codec
   if (isWebM) {
@@ -229,22 +226,26 @@ ipcMain.handle('export:init', async (event, options = {}) => {
     ffmpegArgs.push(
       '-c:v', 'libvpx-vp9',
       '-pix_fmt', 'yuv420p',
-      '-r', String(fps),
       '-b:v', '0',
       '-crf', '24',
       '-deadline', 'realtime',
       '-cpu-used', '4',
       '-row-mt', '1'
     );
+    if (audioInputFile && fs.existsSync(audioInputFile)) {
+      ffmpegArgs.push('-c:a', 'libopus', '-b:a', '192k');
+    }
   } else {
     // Native H.264 encoding for MP4
     ffmpegArgs.push(
       '-c:v', 'libx264',
       '-pix_fmt', 'yuv420p',
-      '-r', String(fps),
       '-preset', 'fast',
       '-crf', '17' // Near-lossless visual quality
     );
+    if (audioInputFile && fs.existsSync(audioInputFile)) {
+      ffmpegArgs.push('-c:a', 'aac', '-b:a', '320k');
+    }
   }
 
   if (audioInputFile && fs.existsSync(audioInputFile)) {

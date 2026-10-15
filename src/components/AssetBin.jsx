@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PUPPET_SLOTS, getSlotsForMode } from '../hooks/usePuppetEngine';
+import { GOOGLE_FLOW_SYNCRO_VOX_URL } from '../constants/urls';
 
 // All supported media types the bin can load
 const MEDIA_ACCEPT = [
@@ -901,6 +902,29 @@ export function AssetBin({
             >
               {puppetEnabled ? '● LIVE' : '○ OFF'}
             </button>
+            <a
+              href={GOOGLE_FLOW_SYNCRO_VOX_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: '2px 5px',
+                borderRadius: 3,
+                border: '1px solid rgba(96, 165, 250, 0.45)',
+                backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                color: '#93c5fd',
+                fontSize: 8,
+                fontWeight: 800,
+                textDecoration: 'none',
+                fontFamily: 'var(--font-mono)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 2,
+              }}
+              title="Open Google Flow Syncro-Vox Tool in a new tab"
+            >
+              <span>FLOW</span>
+              <span style={{ fontSize: 7 }}>↗</span>
+            </a>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -1066,6 +1090,64 @@ export function AssetBin({
 
         <div style={{ fontSize: 8, color: 'var(--text-dim)', lineHeight: 1.4 }}>
           Click any photo to bring it into view. Tag mouth shapes below to lip-sync.
+        </div>
+
+        {/* ── GOOGLE FLOW SYNCRO-VOX TOOL ── */}
+        <div
+          style={{
+            marginTop: 4,
+            padding: '8px 9px',
+            backgroundColor: 'rgba(37, 99, 235, 0.12)',
+            border: '1px solid rgba(96, 165, 250, 0.35)',
+            borderRadius: 5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 5,
+            boxShadow: '0 0 10px rgba(37, 99, 235, 0.15)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 11 }}>⚡</span>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#93c5fd', fontFamily: 'var(--font-mono)' }}>
+                GOOGLE FLOW TOOL
+              </span>
+            </div>
+            <span style={{ fontSize: 7, color: '#bfdbfe', fontWeight: 800, padding: '1px 5px', backgroundColor: 'rgba(37, 99, 235, 0.35)', borderRadius: 2 }}>
+              SYNCRO-VOX
+            </span>
+          </div>
+
+          <div style={{ fontSize: 8, color: '#cbd5e1', lineHeight: 1.35 }}>
+            Create & prep talking mouth shapes and puppet sprites in Google Flow:
+          </div>
+
+          <a
+            href={GOOGLE_FLOW_SYNCRO_VOX_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open Google Flow Syncro-Vox Tool in new tab"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '6px 10px',
+              backgroundColor: '#2563eb',
+              color: '#ffffff',
+              fontSize: 9,
+              fontWeight: 800,
+              fontFamily: 'var(--font-mono)',
+              borderRadius: 3,
+              textDecoration: 'none',
+              letterSpacing: 0.5,
+              boxShadow: '0 0 10px rgba(37, 99, 235, 0.45)',
+              transition: 'background-color 0.15s ease',
+            }}
+          >
+            <span>OPEN FLOW SYNCRO-VOX</span>
+            <span>↗</span>
+          </a>
         </div>
       </div>
 

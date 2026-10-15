@@ -524,7 +524,8 @@ export function FXConsole({
           {cinemaMode ? '◼ EXIT FULLSCREEN CINEMA [C]' : '🎬 CINEMA MODE · FULLSCREEN [C]'}
         </button>
         <span style={{ fontSize: 8, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.4, marginTop: -2 }}>
-          Hides UI & enters Fullscreen. Press <strong style={{ color: 'var(--accent-orange)' }}>C</strong> or <strong style={{ color: '#fff' }}>ESC</strong> to exit.
+          Hides UI & enters Fullscreen. Press <strong style={{ color: 'var(--accent-orange)' }}>C</strong> or <strong style={{ color: '#fff' }}>ESC</strong> to exit.<br />
+          <span style={{ color: 'var(--accent-blue, #00e5ff)' }}>💡 Pro-Tip:</span> For best quality & zero lag, record in Cinema Mode using Windows Snipping Tool (<strong style={{ color: '#fff' }}>Win+Shift+R</strong>) or Game Bar (<strong style={{ color: '#fff' }}>Win+Alt+R</strong>).
         </span>
       </div>
 

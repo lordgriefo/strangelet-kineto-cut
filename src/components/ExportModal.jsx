@@ -147,8 +147,8 @@ export function ExportModal({
           onSeek(timestamp);
         }
 
-        // 2. Wait 1 tick for DOM, Three.js & WebGL paint (1 is sufficient for capturePage)
-        await new Promise((r) => requestAnimationFrame(r));
+        // 2. Wait 2 ticks to guarantee React commits and Chromium paints the frame buffer
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
         // 3. Capture exact viewport rect via native Chromium buffer
         if (window.electronAPI?.captureViewportFrame) {

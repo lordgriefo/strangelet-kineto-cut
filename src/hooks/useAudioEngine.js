@@ -302,8 +302,11 @@ export function useAudioEngine(sensitivity = 1.0, bpm = 120) {
           if (fluxHistoryRef.current.length > 43) fluxHistoryRef.current.shift(); // ~700ms at 60fps
           const avgFlux = fluxHistoryRef.current.reduce((a, b) => a + b, 0) / fluxHistoryRef.current.length;
 
-          // Transient fires when flux spikes 1.8× above recent average, min 120ms apart
-          const isTransient = flux > avgFlux * 1.8 && flux > 0.002 && (now - lastTransientTime.current) > 0.12;
+          // Transient fires when flux spikes above average or on heavy bass kicks, scaled by sensitivity
+          const threshMultiplier = Math.max(1.15, 2.0 - (s - 1.0) * 0.45);
+          const minFluxThresh = 0.0016 / Math.max(0.4, s);
+          const timeSinceLast = now - lastTransientTime.current;
+          const isTransient = ((flux > avgFlux * threshMultiplier && flux > minFluxThresh) || (bass > 0.75 && flux > avgFlux * 1.1) || (flux > 0.035)) && timeSinceLast > 0.11;
           if (isTransient) lastTransientTime.current = now;
 
           // Also grab any Meyda data if it happened to fire (optional enhancement)
